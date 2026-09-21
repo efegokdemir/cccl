@@ -131,6 +131,16 @@ use `cuda::is_trivially_copyable(_v)` instead, which supports more cases. The ve
 `__half`/`__nv_bfloat16` non-trivial special members, so the standard trait reports false for them
 (and aggregates of them) even though they are functionally copyable. Candidate for a pre-commit grep.
 
+## api.alias-template-ctad-gap (important, public type aliases wrapping a class template that supports CTAD)
+
+<!-- provenance:
+  #3686→#6093 host_mdspan/device_mdspan/managed_mdspan alias templates over cuda::std::mdspan with a substituted accessor; CTAD silently failed to compile (pair auto-inferred from issue #6076)
+-->
+
+When a diff introduces a type as an alias template, users cannot construct it via CTAD in C++17.
+This is usually fine, unless the alias replaced a public entity that previously supported CTAD,
+in which case the change breaks CTAD. Flag the alias template and require a test for CTAD to be added.
+
 ## perf.tuning-refactor-verification (important, CUB tuning-policy selectors in `cub/device/dispatch/tuning/*.cuh` and perf-critical type/arch dispatch)
 
 <!-- provenance:
