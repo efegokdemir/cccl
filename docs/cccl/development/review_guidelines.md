@@ -131,6 +131,20 @@ use `cuda::is_trivially_copyable(_v)` instead, which supports more cases. The ve
 `__half`/`__nv_bfloat16` non-trivial special members, so the standard trait reports false for them
 (and aggregates of them) even though they are functionally copyable. Candidate for a pre-commit grep.
 
+## abi.missing-hide-from-abi (critical, inline functions in public headers whose behavior depends on the build configuration)
+
+<!-- provenance:
+  #2591→#3209 CUB kernel-source getters returned kernel pointers without _CCCL_HIDE_FROM_ABI;
+  #5255→#5272 driver_api.h promoted into the public libcudacxx tree carrying plain-inline functions without _CCCL_HOST_API
+-->
+
+Flag an inline function in a public header whose result can differ between two copies of CCCL linked
+into one binary (e.g., built against different CUDA toolkits or CCCL versions) — especially functions
+returning kernel or function pointers — unless it is marked `_CCCL_HIDE_FROM_ABI` (or an attribute macro
+that includes it, like `_CCCL_HOST_API`). With default visibility the linker keeps ONE definition
+across all copies, so the losing copy's callers get the other build's result (e.g. a wrong kernel
+pointer) — no build error, just wrong behavior at run time.
+
 ## perf.tuning-refactor-verification (important, CUB tuning-policy selectors in `cub/device/dispatch/tuning/*.cuh` and perf-critical type/arch dispatch)
 
 <!-- provenance:
