@@ -170,24 +170,27 @@ _CCCL_API constexpr bool __is_unit_stride_slice()
   // NOLINTEND(bugprone-branch-clone)
 }
 
+template <class _Indices, class... _Slices>
+inline constexpr bool __all_slices_are_full_extent_v = false;
+
+template <size_t... _Indices, class... _Slices>
+inline constexpr bool __all_slices_are_full_extent_v<index_sequence<_Indices...>, _Slices...> =
+  (is_convertible_v<__type_index_c<_Indices, _Slices...>, full_extent_t> && ...);
+
 // [mdspan.sub.map.left]
-template <class _LayoutMapping, class _SubExtents, class _Slice, class... _OtherSlices>
+template <class _LayoutMapping, class _SubExtents, class... _Slices>
 _CCCL_API constexpr bool __can_layout_left()
 {
   // [mdspan.sub.map.left-1.2]
-  if constexpr (_SubExtents::rank() == 0)
+  constexpr auto __sub_rank = _SubExtents::rank();
+  if constexpr (__sub_rank == 0)
   {
     return true;
   }
   // [mdspan.sub.map.left-1.3.2]
-  else if constexpr (sizeof...(_OtherSlices) == 0)
-  {
-    return ::cuda::std::__is_unit_stride_slice<_LayoutMapping, _Slice>();
-  }
-  // [mdspan.sub.map.left-1.3.1]
-  else if constexpr (is_convertible_v<_Slice, full_extent_t>)
-  {
-    return ::cuda::std::__can_layout_left<_LayoutMapping, _SubExtents, _OtherSlices...>();
+  else if constexpr (::cuda::std::__is_unit_stride_slice<_LayoutMapping, __type_index_c<__sub_rank - 1, _Slices...>>())
+  { // [mdspan.sub.map.left-1.3.1]
+    return __all_slices_are_full_extent_v<make_index_sequence<__sub_rank - 1>, _Slices...>;
   }
   else
   {
@@ -238,14 +241,9 @@ _CCCL_API constexpr bool __can_layout_right()
     return true;
   }
   // [mdspan.sub.map.right-1.3.2]
-  else if constexpr (sizeof...(_OtherSlices) == 0)
-  {
-    return ::cuda::std::__is_unit_stride_slice<_LayoutMapping, _Slice>();
-  }
-  // [mdspan.sub.map.right-1.3.1]
-  else if constexpr (is_convertible_v<_Slice, full_extent_t>)
-  {
-    return ::cuda::std::__can_layout_left<_LayoutMapping, _SubExtents, _OtherSlices...>();
+  else if constexpr (::cuda::std::__is_unit_stride_slice<_LayoutMapping, _Slice>())
+  { // [mdspan.sub.map.right-1.3.1]
+    return (is_convertible_v<_OtherSlices, full_extent_t> && ...);
   }
   else
   {

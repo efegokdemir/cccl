@@ -289,14 +289,14 @@ TEST_FUNC constexpr bool test()
       static_assert(sub.rank_dynamic() == 2);
 
       using submdspan_t = decltype(sub);
-      static_assert(cuda::std::is_same_v<typename submdspan_t::layout_type, cuda::std::layout_right>);
+      static_assert(cuda::std::is_same_v<typename submdspan_t::layout_type, cuda::std::layout_stride>);
 
-      assert(sub.stride(0) == 1);
+      assert(sub.stride(0) == 3);
       assert(sub.stride(1) == md.stride(1));
       assert(sub.extent(0) == md.extent(0));
       assert(sub.extent(1) == 1);
       assert(sub.size() == 2);
-      assert(equal_to(sub, {"H", "O"}));
+      assert(equal_to(sub, {"H", "P"}));
     }
 
     { // Slice of elements from start 1:2, then full extent
@@ -309,7 +309,7 @@ TEST_FUNC constexpr bool test()
       static_assert(sub.rank_dynamic() == 2);
 
       using submdspan_t = decltype(sub);
-      static_assert(cuda::std::is_same_v<typename submdspan_t::layout_type, cuda::std::layout_stride>);
+      static_assert(cuda::std::is_same_v<typename submdspan_t::layout_type, cuda::std::layout_right>);
 
       assert(sub.stride(0) == md.stride(0));
       assert(sub.stride(1) == md.stride(1));
