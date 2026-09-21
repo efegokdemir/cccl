@@ -118,6 +118,19 @@ use `cuda::is_trivially_copyable(_v)` instead, which supports more cases. The ve
 `__half`/`__nv_bfloat16` non-trivial special members, so the standard trait reports false for them
 (and aggregates of them) even though they are functionally copyable. Candidate for a pre-commit grep.
 
+## correctness.header-kernel-odr-template-hack (critical, `__global__` kernels and free functions defined in headers)
+
+<!-- provenance:
+  #2641→#2656 templatized CUDASTF's callback_completion_kernel to dodge a multiple-definition linker error, risking runtime launch errors
+-->
+
+Flag a `__global__` function (or any function) defined in a header that is turned into a template
+(especially with an unused/default-only parameter like `template <int = 0>`) purely to work around a
+"multiple definition" / ODR linker error — a template is not a safe substitute for `inline` here:
+identically instantiated template kernels in multiple TUs can still misbehave at launch time. The
+correct fix is `inline` for ordinary functions and `static` or an unnamed namespace for `__global__`
+kernels.
+
 ## perf.tuning-refactor-verification (important, CUB tuning-policy selectors in `cub/device/dispatch/tuning/*.cuh` and perf-critical type/arch dispatch)
 
 <!-- provenance:
