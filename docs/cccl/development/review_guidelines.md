@@ -83,6 +83,19 @@ arithmetic/comparison intrinsics require SM80 while CCCL supports sm75+: gate th
 intrinsics (`__bfloat162float`/`__float2bfloat16_rn`; for `__nv_bfloat162`,
 `__bfloat1622float2`/`__float22bfloat162_rn`). Candidate for a pre-commit grep.
 
+## build.no-long (important, C++/CUDA code, including tests)
+
+<!-- provenance:
+  #6068→#6081 c/parallel three_way_partition used `using OffsetT = long`, whose choose_signed_offset static_assert fails under MSVC (LLP64: long is 32-bit)
+-->
+
+Flag any use of `long`/`unsigned long` as a chosen type. `long` is 64-bit on LP64 Linux/macOS but
+32-bit on LLP64 Windows (MSVC, clang-cl), so code assuming either width builds and passes on one
+platform and silently truncates or fails on the other. Use `int64_t`/`long long`, `int32_t`, or
+`ptrdiff_t`/`size_t` to say which width is meant. Acceptable: `long` as a *supported* type for
+traits, overload sets, type-list tests enumerating fundamental types, and external API signatures
+that use it. Candidate for a pre-commit grep.
+
 ## correctness.pdl-restrict-aliasing (critical, CUDA kernels that call `_CCCL_PDL_GRID_DEPENDENCY_SYNC()` / `cudaGridDependencySynchronize()`)
 
 <!-- provenance: manually added -->
