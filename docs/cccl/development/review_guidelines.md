@@ -83,6 +83,20 @@ arithmetic/comparison intrinsics require SM80 while CCCL supports sm75+: gate th
 intrinsics (`__bfloat162float`/`__float2bfloat16_rn`; for `__nv_bfloat162`,
 `__bfloat1622float2`/`__float22bfloat162_rn`). Candidate for a pre-commit grep.
 
+## build.windows-min-max-macro (important, C++ code calling `.max()`/`.min()` or naming a new member/trait `max`/`min`)
+
+<!-- provenance:
+  #8875→#9246 argument-annotation trait member named max, computed via unparenthesized numeric_limits<T>::max(), a preprocessor argument-count error under <windows.h>'s max/min macros;
+  renamed to highest/lowest and parenthesized
+-->
+
+Flag an unparenthesized call to a function literally named `max`/`min` (e.g.
+`std::numeric_limits<T>::max()`), and any new member or trait named `max`/`min`. On Windows,
+`<windows.h>` defines `max`/`min` as function-like macros, breaking such code. Headers sandwiched
+between `<cuda/std/__cccl/prologue.h>`/`epilogue.h` (libcudacxx, cudax) are safe; everywhere else
+(CUB, Thrust, tests, examples), require the macro-safe spelling `(std::numeric_limits<T>::max)()`
+and prefer other member names. Candidate for a pre-commit grep.
+
 ## correctness.pdl-restrict-aliasing (critical, CUDA kernels that call `_CCCL_PDL_GRID_DEPENDENCY_SYNC()` / `cudaGridDependencySynchronize()`)
 
 <!-- provenance: manually added -->
