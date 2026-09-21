@@ -131,6 +131,21 @@ use `cuda::is_trivially_copyable(_v)` instead, which supports more cases. The ve
 `__half`/`__nv_bfloat16` non-trivial special members, so the standard trait reports false for them
 (and aggregates of them) even though they are functionally copyable. Candidate for a pre-commit grep.
 
+## perf.benchmark-exec-tag-sync-without-sync-call (important, nvbench benchmark harness `state.exec(...)` calls)
+
+<!-- provenance:
+  #3114→#5350 merge_sort keys benchmark switched no_batch→sync while adding PDL although the exec lambda never synchronizes;
+  reverted as an unnecessary workaround
+-->
+
+When a diff adds or changes an nvbench `exec_tag` on a `state.exec(...)` call to include
+`nvbench::exec_tag::sync` (which tells nvbench "the KernelGenerator will perform CUDA synchronization
+itself"), verify the lambda body actually performs an explicit synchronization
+(`launch.get_stream().sync()`, `cudaStreamSynchronize`, or any other kind of stream synchronization).
+Parallel algorithms in Thrust and `cuda::std::` will synchronize internally. Without a sync, the
+measured time silently excludes some or all of the kernel's execution. If the lambda does not sync,
+`exec_tag::no_batch` or `exec_tag::timer` is likely what was intended.
+
 ## perf.tuning-refactor-verification (important, CUB tuning-policy selectors in `cub/device/dispatch/tuning/*.cuh` and perf-critical type/arch dispatch)
 
 <!-- provenance:
