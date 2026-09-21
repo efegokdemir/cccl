@@ -131,6 +131,15 @@ use `cuda::is_trivially_copyable(_v)` instead, which supports more cases. The ve
 `__half`/`__nv_bfloat16` non-trivial special members, so the standard trait reports false for them
 (and aggregates of them) even though they are functionally copyable. Candidate for a pre-commit grep.
 
+## infra.pin-deps (important, CMake/CI/submodules)
+
+<!-- provenance:
+  #534 nvbench `#main` →#582
+-->
+
+Flag dependencies fetched by branch name (`CPMAddPackage("gh:org/repo#main")`, `GIT_TAG
+main`); pin a commit or tag. Candidate for a pre-commit grep.
+
 ## perf.tuning-refactor-verification (important, CUB tuning-policy selectors in `cub/device/dispatch/tuning/*.cuh` and perf-critical type/arch dispatch)
 
 <!-- provenance:
