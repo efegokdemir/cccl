@@ -131,6 +131,28 @@ use `cuda::is_trivially_copyable(_v)` instead, which supports more cases. The ve
 `__half`/`__nv_bfloat16` non-trivial special members, so the standard trait reports false for them
 (and aggregates of them) even though they are functionally copyable. Candidate for a pre-commit grep.
 
+## correctness.cuda-driver-symbol-version-guard (critical, code calling CUDA Driver API symbols)
+
+<!-- provenance:
+  #2192→#5971 cudaGetDriverEntryPointByVersion gated only by a build-time CUDART_VERSION check, breaking when built against CTK>=12.5 but run against an older CUDA runtime (pair auto-inferred from issue #5970);
+  #5976→#6895 (backport #6896) cuGetProcAddress switch reintroduced the same break by bootstrapping via the unversioned cudaGetDriverEntryPoint
+-->
+
+<!-- note:
+  The Runtime API half of the historical incidents is no longer relevant to CCCL: cudart is statically
+  linked everywhere (c/parallel pins CUDA_RUNTIME_LIBRARY STATIC; #7221 fixed the one shared-cudart
+  mix), and the driver bootstrap in cuda/__driver/driver_api.h now dlopens libcuda directly instead of
+  going through cudart.
+-->
+
+When a diff gates a call to a CUDA Driver API symbol introduced in a specific CUDA version behind a
+build-time-only check (`_CCCL_CTK_AT_LEAST(...)`), flag it: `libcuda.so`/`nvcuda.dll` comes from the
+installed display driver, which is independent of — and often older than — the CTK the binary was
+built against, so the symbol can be absent at run time regardless of any build-time guard. Resolve
+driver entry points through the versioned `cuGetProcAddress` bootstrap in
+`cuda/__driver/driver_api.h` (which reports availability), or verify `cudaDriverGetVersion` before
+the call. PR CI builds and runs with matched driver/CTK, so this only reproduces in the field.
+
 ## perf.tuning-refactor-verification (important, CUB tuning-policy selectors in `cub/device/dispatch/tuning/*.cuh` and perf-critical type/arch dispatch)
 
 <!-- provenance:
